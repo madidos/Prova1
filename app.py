@@ -245,3 +245,17 @@ if st.session_state.get("results") is not None:
             st.line_chart(base, width='stretch')
         else:
             st.info("Nessun periodo comune sufficiente per il grafico.")
+
+        st.markdown("#### TER e metriche di replica (per indice selezionato)")
+        metrics = (
+            ok[ok["Indice"] == sel][["ETF", "TER %", "Tracking Diff % (ann.)", "Gap vs TER %"]]
+            .dropna()
+            .set_index("ETF")
+        )
+        if not metrics.empty:
+            st.bar_chart(metrics)
+            st.caption(
+                "**TER %** = commissione annua dichiarata · "
+                "**Tracking Diff %** = quanto l'ETF resta indietro rispetto all'indice (CAGR ETF − CAGR indice) · "
+                "**Gap vs TER %** = TD + TER (vicino a 0 = efficiente)."
+            )
