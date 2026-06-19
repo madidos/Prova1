@@ -200,7 +200,7 @@ if st.session_state.get("results") is not None:
 
         # ---- Bar chart differenze YoY con linea TER ----
         st.markdown("#### Differenza rendimento annuo (ETF − indice)")
-        st.caption("Barre verdi = ETF sopra l'indice · rosse = sotto · linea tratteggiata = −TER atteso")
+        st.caption("Linea tratteggiata rossa = −TER atteso")
         for ticker in tickers:
             if ticker not in cache or col is None:
                 continue
@@ -211,24 +211,28 @@ if st.session_state.get("results") is not None:
             diff = et.compute_yoy_diff(cache[ticker], panel[col])
             if diff.empty:
                 continue
+
+            # Statistiche riepilogative
+            st.markdown(f"**Summary {ticker} vs {sel}**")
+            q1, med, q3 = diff.quantile([0.25, 0.5, 0.75])
+            cols = st.columns(7)
+            for col_ui, label, val in zip(cols, ["Mean", "Std", "Min", "Q1", "Median", "Q3", "Max"],
+                                          [diff.mean(), diff.std(), diff.min(), q1, med, q3, diff.max()]):
+                col_ui.metric(label, f"{val:.4f}")
+
             diff_df = pd.DataFrame({
                 "data": diff.index.to_timestamp(),
                 "diff": diff.values * 100,
             })
             bars = (
                 alt.Chart(diff_df)
-                .mark_bar(size=4)
+                .mark_bar(size=3, color="#1f77b4")
                 .encode(
                     x=alt.X("data:T", title=None),
                     y=alt.Y("diff:Q", title="Diff % (YoY)"),
-                    color=alt.condition(
-                        alt.datum.diff > 0,
-                        alt.value("#2e7d32"),
-                        alt.value("#c62828"),
-                    ),
                     tooltip=["data:T", alt.Tooltip("diff:Q", format=".2f")],
                 )
-                .properties(title=f"{ticker}  vs  {sel}", height=320)
+                .properties(title=f"{ticker} - {sel}", height=300)
             )
             rule = (
                 alt.Chart(pd.DataFrame({"y": [-ter_val]}))
