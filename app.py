@@ -212,14 +212,6 @@ if st.session_state.get("results") is not None:
             if diff.empty:
                 continue
 
-            # Statistiche riepilogative
-            st.markdown(f"**Summary {ticker} vs {sel}**")
-            q1, med, q3 = diff.quantile([0.25, 0.5, 0.75])
-            cols = st.columns(7)
-            for col_ui, label, val in zip(cols, ["Mean", "Std", "Min", "Q1", "Median", "Q3", "Max"],
-                                          [diff.mean(), diff.std(), diff.min(), q1, med, q3, diff.max()]):
-                col_ui.metric(label, f"{val:.4f}")
-
             diff_df = pd.DataFrame({
                 "data": diff.index.to_timestamp(),
                 "diff": diff.values * 100,
