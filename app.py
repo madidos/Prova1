@@ -217,7 +217,7 @@ if st.session_state.get("results") is not None:
             })
             bars = (
                 alt.Chart(diff_df)
-                .mark_bar()
+                .mark_bar(size=4)
                 .encode(
                     x=alt.X("data:T", title=None),
                     y=alt.Y("diff:Q", title="Diff % (YoY)"),
@@ -228,11 +228,11 @@ if st.session_state.get("results") is not None:
                     ),
                     tooltip=["data:T", alt.Tooltip("diff:Q", format=".2f")],
                 )
-                .properties(title=f"{ticker}  vs  {sel}", height=250)
+                .properties(title=f"{ticker}  vs  {sel}", height=320)
             )
             rule = (
                 alt.Chart(pd.DataFrame({"y": [-ter_val]}))
-                .mark_rule(color="red", strokeDash=[6, 3], size=2)
+                .mark_rule(color="red", strokeDash=[6, 3], size=1)
                 .encode(y="y:Q")
             )
             st.altair_chart(bars + rule, use_container_width=True)
