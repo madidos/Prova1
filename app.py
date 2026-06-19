@@ -10,6 +10,7 @@ Si apre nel browser su http://localhost:8501
 
 from __future__ import annotations
 
+import altair as alt
 import pandas as pd
 import streamlit as st
 
@@ -189,14 +190,55 @@ if st.session_state.get("results") is not None:
         mime="text/csv",
     )
 
-    # ---- Grafico ----
-    st.markdown("#### Andamento (base 100) ETF vs indice")
+    # ---- Grafici ----
     cache = st.session_state.get("etf_cache", {})
     indices_with_data = sorted(ok["Indice"].unique())
     if indices_with_data and cache:
         sel = st.selectbox("Indice da visualizzare", indices_with_data)
         col = et.resolve_index_column(sel, panel)
         tickers = ok[ok["Indice"] == sel]["ETF"].tolist()
+
+        # ---- Bar chart differenze YoY con linea TER ----
+        st.markdown("#### Differenza rendimento annuo (ETF − indice)")
+        st.caption("Barre verdi = ETF sopra l'indice · rosse = sotto · linea tratteggiata = −TER atteso")
+        for ticker in tickers:
+            if ticker not in cache or col is None:
+                continue
+            ter_vals = ok[ok["ETF"] == ticker]["TER %"].values
+            if len(ter_vals) == 0:
+                continue
+            ter_val = float(ter_vals[0])
+            diff = et.compute_yoy_diff(cache[ticker], panel[col])
+            if diff.empty:
+                continue
+            diff_df = pd.DataFrame({
+                "data": diff.index.to_timestamp(),
+                "diff": diff.values * 100,
+            })
+            bars = (
+                alt.Chart(diff_df)
+                .mark_bar()
+                .encode(
+                    x=alt.X("data:T", title=None),
+                    y=alt.Y("diff:Q", title="Diff % (YoY)"),
+                    color=alt.condition(
+                        alt.datum.diff > 0,
+                        alt.value("#2e7d32"),
+                        alt.value("#c62828"),
+                    ),
+                    tooltip=["data:T", alt.Tooltip("diff:Q", format=".2f")],
+                )
+                .properties(title=f"{ticker}  vs  {sel}", height=250)
+            )
+            rule = (
+                alt.Chart(pd.DataFrame({"y": [-ter_val]}))
+                .mark_rule(color="red", strokeDash=[6, 3], size=2)
+                .encode(y="y:Q")
+            )
+            st.altair_chart(bars + rule, use_container_width=True)
+
+        # ---- Base 100 ----
+        st.markdown("#### Andamento (base 100) ETF vs indice")
         base = et.build_base100(tickers, col, panel, cache)
         if not base.empty:
             base.index = base.index.to_timestamp()

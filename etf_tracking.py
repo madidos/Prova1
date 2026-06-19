@@ -337,6 +337,13 @@ def run_analysis(
     return out
 
 
+def compute_yoy_diff(etf: pd.Series, index: pd.Series, pct_period: int = 12) -> pd.Series:
+    """Differenze di rendimento YoY (ETF − indice) su finestre mobili a 12 mesi."""
+    merged = pd.concat([etf.rename("etf"), index.rename("idx")], axis=1).dropna()
+    rend = merged.pct_change(pct_period).dropna()
+    return (rend["etf"] - rend["idx"]).rename("diff")
+
+
 def build_base100(
     tickers: list[str],
     index_col: str,
